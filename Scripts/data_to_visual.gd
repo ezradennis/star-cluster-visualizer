@@ -1,10 +1,21 @@
 extends Node3D
 
-@export var distance_scale: float = 10.0 # Parsecs to godot meters
+@export var distance_scale: float = 1.0 # Parsecs to godot meters
 @export var mesh: SphereMesh
 
 
 var multimesh_instance: MultiMeshInstance3D
+var star_positions: PackedVector3Array
+var star_database: Array
+var selection_reticle: MeshInstance3D
+
+@onready var ui_container: MarginContainer = $UI/UIContainer
+@onready var index_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/IndexLabel
+@onready var distance_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/DistanceLabel
+@onready var ra_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/RALabel
+@onready var dec_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/DecLabel
+@onready var temp_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/TempLabel
+
 
 # HR diagram lookup table for v-i
 #var main_sequence_data_vi: Array[Vector2] = [
@@ -31,13 +42,20 @@ var main_sequence_data: Array[Vector2] = [
 	Vector2(2.0, 15.0)    # Cool red dwarfs (M-type)
 ]
 
+# SETUP FUNCTIONS
+
 func _ready() -> void:
 	setup_renderer()
 	
-	var star_data = parse_hyg_csv("res://data/hyg_v42.csv")
+	star_database = parse_hyg_csv("res://data/hyg_v42.csv")
 	
-	if star_data.size() > 0:
-		generate_stars(star_data)
+	if star_database.size() > 0:
+		generate_stars(star_database)
+	
+	Globals.find_clicked_star.connect(find_star)
+	Globals.fly_to_star.connect(fly_to_star)
+	
+	setup_reticle()
 
 func setup_renderer() -> void:
 	multimesh_instance = MultiMeshInstance3D.new()
@@ -57,28 +75,47 @@ func generate_stars(data: Array) -> void:
 	multimesh_instance.multimesh.instance_count = total_stars
 	
 	for i in range(total_stars):
-		var v_mag = data[i][0]
 		var color_index = data[i][1]
-		
 		var ra = deg_to_rad(data[i][2])
 		var dec = deg_to_rad(data[i][3])
+		var dist = data[i][4]
 		
-		var abs_mag = estimate_abs_mag(color_index)
-		var distance = calculate_distance(v_mag, abs_mag)
-		var position = spherical_to_cartesian(distance, ra, dec)
+		var position = spherical_to_cartesian(dist, ra, dec) * distance_scale
 		
-		var transform = Transform3D(Basis(), position * distance_scale)
+		star_positions.append(position)
+		
+		var transform = Transform3D(Basis(), position)
 		multimesh_instance.multimesh.set_instance_transform(i, transform)
 		
 		# color shader stuff
 		var custom_data = Color(color_index, 0.0, 0.0, 0.0)
 		multimesh_instance.multimesh.set_instance_custom_data(i, custom_data)
 
+func setup_reticle() -> void:
+	selection_reticle = MeshInstance3D.new()
+	var reticle_mesh = SphereMesh.new()
+	
+	reticle_mesh.radius = 0.065
+	reticle_mesh.height = 0.13
+	selection_reticle.mesh = reticle_mesh
+	
+	var outline_mat = StandardMaterial3D.new()
+	outline_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	outline_mat.albedo_color = Color(0.0, 0.8, 0.2)
+	
+	outline_mat.cull_mode = BaseMaterial3D.CULL_FRONT
+	
+	selection_reticle.material_override = outline_mat
+	selection_reticle.visible = false
+	
+	add_child(selection_reticle)
+
 # MATH HELPERS
 
 func estimate_abs_mag(color: float) -> float:
 	
-	# if the v-i is out of bounds it just maps to the highest or lower
+	# if the color index (currently b-v I should make this modular) 
+	# is out of bounds it just maps to the highest or lowest
 	if color <= main_sequence_data[0].x:
 		return main_sequence_data[0].y
 	
@@ -111,7 +148,7 @@ func spherical_to_cartesian(d: float, ra_rad: float, dec_rad: float) -> Vector3:
 	
 	return Vector3(x, y, z)
 
-# DATA PARSER
+# DATA FUNCTIONS
 
 func parse_hyg_csv(file_path: String) -> Array:
 	var parsed_data = []
@@ -126,6 +163,7 @@ func parse_hyg_csv(file_path: String) -> Array:
 	
 	var ra_col = 7
 	var dec_col = 8
+	var dist_col = 9
 	var mag_col = 13
 	var ci_col = 16
 	
@@ -145,12 +183,92 @@ func parse_hyg_csv(file_path: String) -> Array:
 		var mag = line[mag_col].to_float()
 		var dec = line[dec_col].to_float()
 		
+		var dist = line[dist_col].to_float()
+		
 		var ra_hours = line[ra_col].to_float()
 		var ra_degrees = ra_hours * 15.0
 		
-		parsed_data.append([mag, color_index, ra_degrees, dec])
+		parsed_data.append([mag, color_index, ra_degrees, dec, dist])
 		
 	
 	file.close()
 	print("Successfully loaded %d stars!" % parsed_data.size())
 	return parsed_data
+
+func find_star(mouse_pos: Vector2) -> void:
+	var camera = get_viewport().get_camera_3d()
+	if not camera: return
+	
+	var ray_origin = camera.project_ray_origin(mouse_pos)
+	var ray_direction = camera.project_ray_normal(mouse_pos)
+	
+	var closest_star_index = -1
+	var closest_distance = INF
+	var max_click_radius = 0.05
+	
+	for i in range(star_positions.size()):
+		var star_pos = star_positions[i]
+		
+		# skip stars perpendicular to or behind camera
+		if ray_direction.dot(star_pos - ray_origin) <= 0:
+			continue
+		
+		var point_to_origin = star_pos - ray_origin
+		var distance_to_ray = point_to_origin.cross(ray_direction).length()
+		
+		if distance_to_ray < closest_distance and distance_to_ray < max_click_radius:
+			closest_distance = distance_to_ray
+			closest_star_index = i
+	
+	if closest_star_index != -1:
+		
+		Globals.current_selected_star_index = closest_star_index
+		selection_reticle.global_position = star_positions[closest_star_index]
+		selection_reticle.visible = true
+		
+		var star_data = star_database[closest_star_index]
+		
+		var app_mag = star_data[0]
+		var color = star_data[1]
+		var ra = star_data[2]
+		var dec = star_data[3]
+		var dist = star_data[4]
+		
+		index_label.text = "Database Index: %d" % closest_star_index
+		distance_label.text = "Distance: %.2f Parsecs" % dist
+		ra_label.text = "Right Ascension: %.2f" % ra
+		dec_label.text = "Declination: %.2f" % dec
+		
+		ui_container.visible = true
+		
+	else:
+		print("Clicked nothing")
+		
+		Globals.current_selected_star_index = -1
+		selection_reticle.visible = false
+		ui_container.visible = false
+
+func lookup_data(data: Array) -> void:
+	pass
+
+# VISUAL AND NICE FUNCTIONS
+
+func fly_to_star() -> void:
+	var target_index = Globals.current_selected_star_index
+	
+	var camera = get_viewport().get_camera_3d()
+	if not camera:return
+	
+	var target_pos = star_positions[target_index]
+	
+	var direction_to_star = camera.global_position.direction_to(target_pos)
+	
+	var stop_distance = 0.5
+	var final_camera_pos = target_pos - (direction_to_star * stop_distance)
+	
+	var tween = create_tween()
+	
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	
+	tween.tween_property(camera, "global_position", final_camera_pos, 2.0)

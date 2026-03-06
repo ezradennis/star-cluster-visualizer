@@ -1,5 +1,7 @@
 class_name FreeLookCamera extends Camera3D
 
+# Free look camera I found online https://godotengine.org/asset-library/asset/701
+
 # Modifier keys' speed multiplier
 const SHIFT_MULTIPLIER = 2.5
 const ALT_MULTIPLIER = 1.0 / SHIFT_MULTIPLIER
@@ -42,6 +44,10 @@ func _input(event):
 				_vel_multiplier = clamp(_vel_multiplier * 1.1, 0.2, 20)
 			MOUSE_BUTTON_WHEEL_DOWN: # Decereases max velocity
 				_vel_multiplier = clamp(_vel_multiplier / 1.1, 0.2, 20)
+		if event.is_action_pressed("LClick"):
+			if event.double_click and Globals.current_selected_star_index != -1:
+				Globals.emit_signal("fly_to_star")
+			Globals.emit_signal("find_clicked_star", event.position)
 
 	# Receives key input
 	if event is InputEventKey:

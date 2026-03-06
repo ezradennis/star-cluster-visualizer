@@ -14,6 +14,10 @@ config/name="StarClusterVisualizer"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+Globals="*uid://cnbad6ur613mo"
+
 [input]
 
 Forward={
