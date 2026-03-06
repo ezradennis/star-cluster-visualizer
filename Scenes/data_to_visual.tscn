@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://d28pd7t6uu3vw"]
+
+[ext_resource type="Script" uid="uid://c11w0pvikcu8j" path="res://Scripts/data_to_visual.gd" id="1_r54ar"]
+[ext_resource type="Shader" uid="uid://swl1q0uqaa0f" path="res://Scenes/starcolor.gdshader" id="2_4afun"]
+
+[sub_resource type="Gradient" id="Gradient_oask3"]
+offsets = PackedFloat32Array(0.0289855, 0.20289855, 0.57246375, 0.81884056, 1)
+colors = PackedColorArray(0, 0.3666668, 1, 1, 0.7787193, 0.82861674, 1, 1, 0.9816477, 0.8996191, 0.4420045, 1, 0.99, 0.60291, 0.3069, 1, 0.76, 0, 0, 1)
+metadata/_snap_count = 100
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_cjohy"]
+gradient = SubResource("Gradient_oask3")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gypdf"]
+render_priority = 0
+shader = ExtResource("2_4afun")
+shader_parameter/color_gradient = SubResource("GradientTexture1D_cjohy")
+shader_parameter/min_vi = -0.3
+shader_parameter/max_vi = 2.0
+shader_parameter/emission_energy = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_3ve10"]
+material = SubResource("ShaderMaterial_gypdf")
+radius = 0.05
+height = 0.1
+radial_segments = 12
+rings = 12
+
+[node name="DataToVisual" type="Node3D" unique_id=1579789219]
+script = ExtResource("1_r54ar")
+mesh = SubResource("SphereMesh_3ve10")

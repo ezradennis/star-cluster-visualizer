@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dilr4a0achjjp"
+
+[deps]
+
+files=["res://data/hyg_v42.hip.translation", "res://data/hyg_v42.hd.translation", "res://data/hyg_v42.hr.translation", "res://data/hyg_v42.gl.translation", "res://data/hyg_v42.bf.translation", "res://data/hyg_v42.proper.translation", "res://data/hyg_v42.ra.translation", "res://data/hyg_v42.dec.translation", "res://data/hyg_v42.dist.translation", "res://data/hyg_v42.pmra.translation", "res://data/hyg_v42.pmdec.translation", "res://data/hyg_v42.rv.translation", "res://data/hyg_v42.mag.translation", "res://data/hyg_v42.absmag.translation", "res://data/hyg_v42.spect.translation", "res://data/hyg_v42.ci.translation", "res://data/hyg_v42.x.translation", "res://data/hyg_v42.y.translation", "res://data/hyg_v42.z.translation", "res://data/hyg_v42.vx.translation", "res://data/hyg_v42.vy.translation", "res://data/hyg_v42.vz.translation", "res://data/hyg_v42.rarad.translation", "res://data/hyg_v42.decrad.translation", "res://data/hyg_v42.pmrarad.translation", "res://data/hyg_v42.pmdecrad.translation", "res://data/hyg_v42.bayer.translation", "res://data/hyg_v42.flam.translation", "res://data/hyg_v42.con.translation", "res://data/hyg_v42.comp.translation", "res://data/hyg_v42.comp.translation", "res://data/hyg_v42.base.translation", "res://data/hyg_v42.lum.translation", "res://data/hyg_v42.var.translation", "res://data/hyg_v42.var.translation", "res://data/hyg_v42.var.translation"]
+
+source_file="res://data/hyg_v42.csv"
+dest_files=["res://data/hyg_v42.hip.translation", "res://data/hyg_v42.hd.translation", "res://data/hyg_v42.hr.translation", "res://data/hyg_v42.gl.translation", "res://data/hyg_v42.bf.translation", "res://data/hyg_v42.proper.translation", "res://data/hyg_v42.ra.translation", "res://data/hyg_v42.dec.translation", "res://data/hyg_v42.dist.translation", "res://data/hyg_v42.pmra.translation", "res://data/hyg_v42.pmdec.translation", "res://data/hyg_v42.rv.translation", "res://data/hyg_v42.mag.translation", "res://data/hyg_v42.absmag.translation", "res://data/hyg_v42.spect.translation", "res://data/hyg_v42.ci.translation", "res://data/hyg_v42.x.translation", "res://data/hyg_v42.y.translation", "res://data/hyg_v42.z.translation", "res://data/hyg_v42.vx.translation", "res://data/hyg_v42.vy.translation", "res://data/hyg_v42.vz.translation", "res://data/hyg_v42.rarad.translation", "res://data/hyg_v42.decrad.translation", "res://data/hyg_v42.pmrarad.translation", "res://data/hyg_v42.pmdecrad.translation", "res://data/hyg_v42.bayer.translation", "res://data/hyg_v42.flam.translation", "res://data/hyg_v42.con.translation", "res://data/hyg_v42.comp.translation", "res://data/hyg_v42.comp.translation", "res://data/hyg_v42.base.translation", "res://data/hyg_v42.lum.translation", "res://data/hyg_v42.var.translation", "res://data/hyg_v42.var.translation", "res://data/hyg_v42.var.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b1agx7r71ti3k"]
+
+[ext_resource type="Script" uid="uid://i4ikcd081nfv" path="res://Scripts/free_cam.gd" id="1_a07o3"]
+
+[node name="FreeCam" type="Camera3D" unique_id=2107165947]
+script = ExtResource("1_a07o3")

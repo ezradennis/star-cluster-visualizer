@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://cletnl2525rsl"]
+
+[ext_resource type="PackedScene" uid="uid://b1agx7r71ti3k" path="res://Scenes/free_cam.tscn" id="1_bo1nx"]
+[ext_resource type="PackedScene" uid="uid://d28pd7t6uu3vw" path="res://Scenes/data_to_visual.tscn" id="2_bo1nx"]
+
+[sub_resource type="Environment" id="Environment_7dm0k"]
+background_mode = 1
+ambient_light_source = 1
+tonemap_mode = 3
+glow_enabled = true
+glow_levels/2 = 0.0
+glow_levels/3 = 0.3
+glow_levels/4 = 0.5
+glow_levels/5 = 1.0
+glow_levels/6 = 1.0
+glow_levels/7 = 1.0
+glow_normalized = true
+glow_intensity = 1.5
+glow_blend_mode = 0
+
+[node name="Main" type="Node3D" unique_id=2004399574]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1119293726]
+environment = SubResource("Environment_7dm0k")
+
+[node name="FreeCam" parent="." unique_id=2107165947 instance=ExtResource("1_bo1nx")]
+far = 100000.0
+
+[node name="DataToVisual" parent="." unique_id=1579789219 instance=ExtResource("2_bo1nx")]
