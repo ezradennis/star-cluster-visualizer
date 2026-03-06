@@ -15,7 +15,7 @@ gradient = SubResource("Gradient_oask3")
 render_priority = 0
 shader = ExtResource("2_4afun")
 shader_parameter/color_gradient = SubResource("GradientTexture1D_cjohy")
-shader_parameter/min_vi = -0.3
+shader_parameter/min_vi = -0.33
 shader_parameter/max_vi = 2.0
 shader_parameter/emission_energy = 2.0
 

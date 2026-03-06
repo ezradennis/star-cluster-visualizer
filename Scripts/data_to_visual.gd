@@ -29,9 +29,9 @@ var selection_reticle: MeshInstance3D
 	#Vector2(3.0, 16.0)    # Small red dwarfs
 #]
 
-# HR diagram lookuup table for b-v
+# HR diagram lookuup table for b-v (b-v, abs magnitude)
 var main_sequence_data: Array[Vector2] = [
-	Vector2(-0.3, -4.0),  # Hot blue stars
+	Vector2(-0.3, -4.0),  # Hot blue stars O
 	Vector2(-0.1, -0.5),
 	Vector2(0.0, 1.0),
 	Vector2(0.3, 3.0),
@@ -41,6 +41,7 @@ var main_sequence_data: Array[Vector2] = [
 	Vector2(1.7, 12.0),
 	Vector2(2.0, 15.0)    # Cool red dwarfs (M-type)
 ]
+
 
 # SETUP FUNCTIONS
 
@@ -111,6 +112,18 @@ func setup_reticle() -> void:
 	add_child(selection_reticle)
 
 # MATH HELPERS
+
+func estimate_surface_temp(color: float) -> float:
+	
+	# prevent divide-by-zero errors
+	if color == -1.8478 or color == -0.6739:
+		return 0.0
+		
+	var term1 = 1.0 / (0.92 * color + 1.7)
+	var term2 = 1.0 / (0.92 * color + 0.62)
+	
+	
+	return 4600 * (term1 + term2)
 
 func estimate_abs_mag(color: float) -> float:
 	
@@ -234,10 +247,13 @@ func find_star(mouse_pos: Vector2) -> void:
 		var dec = star_data[3]
 		var dist = star_data[4]
 		
+		var temp = estimate_surface_temp(color)
+		
 		index_label.text = "Database Index: %d" % closest_star_index
 		distance_label.text = "Distance: %.2f Parsecs" % dist
 		ra_label.text = "Right Ascension: %.2f" % ra
 		dec_label.text = "Declination: %.2f" % dec
+		temp_label.text = "Temperature: %d K" % temp
 		
 		ui_container.visible = true
 		
