@@ -267,7 +267,7 @@ func find_star(mouse_pos: Vector2) -> void:
 func lookup_data(data: Array) -> void:
 	pass
 
-# VISUAL AND NICE FUNCTIONS
+# MOVEMENT FUNCTIONS
 
 func fly_to_star() -> void:
 	var target_index = Globals.current_selected_star_index
