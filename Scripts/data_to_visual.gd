@@ -23,6 +23,11 @@ var selection_reticle: MeshInstance3D
 @onready var console_panel: PanelContainer = $UI/ConsolePanel
 @onready var console_input: LineEdit = $UI/ConsolePanel/HBoxContainer/ConsoleInput
 
+# star list ui
+@onready var list_panel: PanelContainer = $UI/ListPanel
+@onready var star_list: RichTextLabel = $UI/ListPanel/StarList
+
+
 
 # HR diagram lookup table for v-i
 #var main_sequence_data_vi: Array[Vector2] = [
@@ -320,12 +325,31 @@ func fly_to_star() -> void:
 	var camera = get_viewport().get_camera_3d()
 	if not camera:return
 	
+	Globals.can_move = false
 	
 	var target_pos = star_positions[target_index]
 	
+	if target_pos == camera.global_position:
+		return
+	
 	
 	var direction_to_star = camera.global_position.direction_to(target_pos)
-	var stop_distance = 0.5
+	var stop_distance = 0.1
+	
+	var data = star_database[target_index]
+	
+	var app_mag = data[0]
+	var color = data[1]
+	var dist = data[4]
+	
+	var temp = estimate_surface_temp(color)
+	var radius = calculate_stellar_radius(app_mag, dist, temp)
+	
+	var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
+	log_scale = clamp(log_scale, 0.3, 25.0)
+	
+	stop_distance += log_scale / 5
+	
 	var final_camera_pos = target_pos - (direction_to_star * stop_distance)
 	
 	var target_transform = camera.global_transform.looking_at(target_pos, Vector3.UP)
@@ -339,6 +363,16 @@ func fly_to_star() -> void:
 	
 	tween.tween_property(camera, "global_position", final_camera_pos, 2.0)
 	tween.tween_property(camera, "quaternion", target_rotation, 2.0)
+	
+	tween.finished.connect(on_flight_finished)
+
+func on_flight_finished() -> void:
+	var camera = get_viewport().get_camera_3d()
+	
+	if camera and camera.has_method("sync_rotation"):
+		camera.sync_rotation()
+	
+	Globals.can_move = true
 
 # CONSOLE FUNCTIONS
 
@@ -357,6 +391,8 @@ func on_command_submitted(command_text: String) -> void:
 		"tp":
 			var target_name = command_text.trim_prefix("tp ").strip_edges()
 			execute_tp_command(target_name)
+		"stars":
+			execute_stars_command()
 		_:
 			print("Unknown comand: ", command_text)
 
@@ -372,3 +408,46 @@ func execute_tp_command(star_name: String) -> void:
 			fly_to_star()
 			return
 	print("Error: Could not find star named '", star_name, "'")
+
+func execute_stars_command() -> void:
+	list_panel.visible = true
+	
+	var named_stars_data= []
+	
+	star_list.clear()
+	star_list.append_text("[center][b]--- LIST OF NAMED STARS ---[/b][/center]\n\n")
+	
+	for i in range(star_database.size()):
+		var data = star_database[i]
+		var star_name = str(data[5]).strip_edges()
+		
+		if star_name != "unknown":
+			var app_mag = data[0]
+			var color = data[1]
+			var dist = data[4]
+			
+			var temp = estimate_surface_temp(color)
+			var radius =calculate_stellar_radius(app_mag, dist, temp)
+			var display_name = star_name.capitalize() 
+			
+			#var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [display_name, temp, radius]
+			#star_list.append_text(string)
+			
+			named_stars_data.append({
+				"name": display_name,
+				"temp": temp,
+				"radius": radius
+			})
+	
+	named_stars_data.sort_custom(func(a, b): return a["radius"] > b["radius"])
+	
+	for star in named_stars_data:
+		var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [star["name"], star["temp"], star["radius"]]
+		star_list.append_text(string)
+	
+	
+	star_list.append_text("\n[center]Total named stars found: %d[/center]" % named_stars_data.size())
+
+
+func _on_list_x_button_pressed() -> void:
+	list_panel.visible = false

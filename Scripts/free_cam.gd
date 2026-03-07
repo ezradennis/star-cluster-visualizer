@@ -134,3 +134,13 @@ func _update_mouselook():
 	
 		rotate_y(deg_to_rad(-yaw))
 		rotate_object_local(Vector3(1,0,0), deg_to_rad(-pitch))
+
+# stop desync when flying to star
+func sync_rotation() -> void:
+	var current_euler = transform.basis.get_euler()
+	
+	_total_pitch = rad_to_deg(-current_euler.x)
+	
+	rotation.z = 0
+	
+	_velocity = Vector3.ZERO
