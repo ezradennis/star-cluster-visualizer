@@ -9,6 +9,7 @@ const ALT_MULTIPLIER = 1.0 / SHIFT_MULTIPLIER
 
 @export_range(0.0, 1.0) var sensitivity: float = 0.25
 
+
 # Mouse state
 var _mouse_position = Vector2(0.0, 0.0)
 var _total_pitch = 0.0
@@ -31,6 +32,17 @@ var _shift = false
 var _alt = false
 
 func _input(event):
+	
+	if event.is_action_pressed("Console"):
+		Globals.change_console_visible.emit()
+		get_viewport().set_input_as_handled()
+		Globals.can_move = !Globals.can_move
+		_velocity = Vector3.ZERO
+		return
+	
+	if !Globals.can_move:
+		return
+	
 	# Receives mouse motion
 	if event is InputEventMouseMotion:
 		_mouse_position = event.relative
@@ -48,7 +60,8 @@ func _input(event):
 			if event.double_click and Globals.current_selected_star_index != -1:
 				Globals.emit_signal("fly_to_star")
 			Globals.emit_signal("find_clicked_star", event.position)
-
+	
+	
 	# Receives key input
 	if event is InputEventKey:
 		match event.keycode:
@@ -68,6 +81,7 @@ func _input(event):
 				_shift = event.pressed
 			KEY_ALT:
 				_alt = event.pressed
+
 
 # Updates mouselook and movement every frame
 func _process(delta):

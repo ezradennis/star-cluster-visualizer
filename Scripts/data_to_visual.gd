@@ -9,12 +9,19 @@ var star_positions: PackedVector3Array
 var star_database: Array
 var selection_reticle: MeshInstance3D
 
+# info ui
 @onready var ui_container: MarginContainer = $UI/UIContainer
 @onready var index_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/IndexLabel
 @onready var distance_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/DistanceLabel
 @onready var ra_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/RALabel
 @onready var dec_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/DecLabel
 @onready var temp_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/TempLabel
+@onready var radius_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/RadiusLabel
+@onready var name_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/NameLabel
+
+# console ui
+@onready var console_panel: PanelContainer = $UI/ConsolePanel
+@onready var console_input: LineEdit = $UI/ConsolePanel/HBoxContainer/ConsoleInput
 
 
 # HR diagram lookup table for v-i
@@ -42,7 +49,6 @@ var main_sequence_data: Array[Vector2] = [
 	Vector2(2.0, 15.0)    # Cool red dwarfs (M-type)
 ]
 
-
 # SETUP FUNCTIONS
 
 func _ready() -> void:
@@ -55,6 +61,8 @@ func _ready() -> void:
 	
 	Globals.find_clicked_star.connect(find_star)
 	Globals.fly_to_star.connect(fly_to_star)
+	Globals.change_console_visible.connect(on_change_console_visible)
+	console_input.text_submitted.connect(on_command_submitted)
 	
 	setup_reticle()
 
@@ -76,16 +84,24 @@ func generate_stars(data: Array) -> void:
 	multimesh_instance.multimesh.instance_count = total_stars
 	
 	for i in range(total_stars):
+		
+		var app_mag = data[i][0]
 		var color_index = data[i][1]
 		var ra = deg_to_rad(data[i][2])
 		var dec = deg_to_rad(data[i][3])
 		var dist = data[i][4]
 		
-		var position = spherical_to_cartesian(dist, ra, dec) * distance_scale
+		var temp = estimate_surface_temp(color_index)
+		var radius = calculate_stellar_radius(app_mag, dist, temp)
 		
+		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
+		log_scale = clamp(log_scale, 0.3, 25.0)
+		
+		var position = spherical_to_cartesian(dist, ra, dec) * distance_scale
 		star_positions.append(position)
 		
-		var transform = Transform3D(Basis(), position)
+		var scaled_basis = Basis().scaled(Vector3(log_scale, log_scale, log_scale))
+		var transform = Transform3D(scaled_basis, position)
 		multimesh_instance.multimesh.set_instance_transform(i, transform)
 		
 		# color shader stuff
@@ -174,6 +190,7 @@ func parse_hyg_csv(file_path: String) -> Array:
 	
 	file.get_csv_line()
 	
+	var name_col = 6
 	var ra_col = 7
 	var dec_col = 8
 	var dist_col = 9
@@ -193,6 +210,11 @@ func parse_hyg_csv(file_path: String) -> Array:
 		if ci_string != "":
 			color_index = ci_string.to_float()
 		
+		var star_name = "unknown"
+		var name_string = line[name_col]
+		if name_string != "":
+			star_name = name_string
+		
 		var mag = line[mag_col].to_float()
 		var dec = line[dec_col].to_float()
 		
@@ -201,7 +223,7 @@ func parse_hyg_csv(file_path: String) -> Array:
 		var ra_hours = line[ra_col].to_float()
 		var ra_degrees = ra_hours * 15.0
 		
-		parsed_data.append([mag, color_index, ra_degrees, dec, dist])
+		parsed_data.append([mag, color_index, ra_degrees, dec, dist, star_name])
 		
 	
 	file.close()
@@ -217,7 +239,7 @@ func find_star(mouse_pos: Vector2) -> void:
 	
 	var closest_star_index = -1
 	var closest_distance = INF
-	var max_click_radius = 0.05
+	var max_click_radius = 0.5
 	
 	for i in range(star_positions.size()):
 		var star_pos = star_positions[i]
@@ -236,8 +258,6 @@ func find_star(mouse_pos: Vector2) -> void:
 	if closest_star_index != -1:
 		
 		Globals.current_selected_star_index = closest_star_index
-		selection_reticle.global_position = star_positions[closest_star_index]
-		selection_reticle.visible = true
 		
 		var star_data = star_database[closest_star_index]
 		
@@ -246,23 +266,48 @@ func find_star(mouse_pos: Vector2) -> void:
 		var ra = star_data[2]
 		var dec = star_data[3]
 		var dist = star_data[4]
+		var star_name = star_data[5]
 		
 		var temp = estimate_surface_temp(color)
+		var radius = calculate_stellar_radius(app_mag, dist, temp)
+		
+		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
+		log_scale = clamp(log_scale, 0.3, 25.0)
+		
+		selection_reticle.scale = Vector3(log_scale, log_scale, log_scale)
+		selection_reticle.global_position = star_positions[closest_star_index]
+		selection_reticle.visible = true
+		
 		
 		index_label.text = "Database Index: %d" % closest_star_index
 		distance_label.text = "Distance: %.2f Parsecs" % dist
 		ra_label.text = "Right Ascension: %.2f" % ra
 		dec_label.text = "Declination: %.2f" % dec
 		temp_label.text = "Temperature: %d K" % temp
+		radius_label.text = "Solar Radii: %.2f" % radius
+		name_label.text = "Name: %s" % star_name
 		
 		ui_container.visible = true
 		
 	else:
-		print("Clicked nothing")
 		
 		Globals.current_selected_star_index = -1
 		selection_reticle.visible = false
 		ui_container.visible = false
+
+func calculate_stellar_radius(app_mag: float, dist: float, temp: float) -> float:
+	
+	if temp <= 0.0 or dist <= 0.0:
+		return 1.0
+	
+	var abs_mag = app_mag - 5.0 * (log(dist) / log(10.0)) + 5.0
+	
+	var luminosity_ratio = pow(10.0, 0.4 * (4.83 - abs_mag))
+	
+	var temp_ratio = 5778.0 / temp
+	var solar_radii = sqrt(luminosity_ratio) * pow(temp_ratio, 2.0)
+	
+	return solar_radii
 
 func lookup_data(data: Array) -> void:
 	pass
@@ -275,16 +320,55 @@ func fly_to_star() -> void:
 	var camera = get_viewport().get_camera_3d()
 	if not camera:return
 	
+	
 	var target_pos = star_positions[target_index]
 	
-	var direction_to_star = camera.global_position.direction_to(target_pos)
 	
+	var direction_to_star = camera.global_position.direction_to(target_pos)
 	var stop_distance = 0.5
 	var final_camera_pos = target_pos - (direction_to_star * stop_distance)
 	
+	var target_transform = camera.global_transform.looking_at(target_pos, Vector3.UP)
+	var target_rotation = target_transform.basis.get_rotation_quaternion()
+	
 	var tween = create_tween()
 	
+	tween.set_parallel(true)
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	
 	tween.tween_property(camera, "global_position", final_camera_pos, 2.0)
+	tween.tween_property(camera, "quaternion", target_rotation, 2.0)
+
+# CONSOLE FUNCTIONS
+
+func on_change_console_visible() -> void:
+	console_panel.visible = !console_panel.visible
+	if console_panel.visible:
+		console_input.grab_focus()
+		console_input.clear()
+
+func on_command_submitted(command_text: String) -> void:
+	command_text = command_text.strip_edges().to_lower()
+	console_panel.visible = false
+	Globals.can_move = true
+	
+	match command_text.get_slice(" ", 0):
+		"tp":
+			var target_name = command_text.trim_prefix("tp ").strip_edges()
+			execute_tp_command(target_name)
+		_:
+			print("Unknown comand: ", command_text)
+
+func execute_tp_command(star_name: String) -> void:
+	
+	for i in range(star_database.size()):
+		var data = star_database[i]
+		
+		var current_star_name = str(data[5].to_lower())
+		
+		if current_star_name == star_name:
+			Globals.current_selected_star_index = i
+			fly_to_star()
+			return
+	print("Error: Could not find star named '", star_name, "'")

@@ -4,7 +4,7 @@
 [ext_resource type="Shader" uid="uid://swl1q0uqaa0f" path="res://Scenes/starcolor.gdshader" id="2_4afun"]
 
 [sub_resource type="Gradient" id="Gradient_oask3"]
-offsets = PackedFloat32Array(0.0289855, 0.20289855, 0.57246375, 0.81884056, 1)
+offsets = PackedFloat32Array(0.0289855, 0.16666667, 0.5362319, 0.7173913, 1)
 colors = PackedColorArray(0, 0.3666668, 1, 1, 0.7787193, 0.82861674, 1, 1, 0.9816477, 0.8996191, 0.4420045, 1, 0.99, 0.60291, 0.3069, 1, 0.76, 0, 0, 1)
 metadata/_snap_count = 100
 
@@ -51,6 +51,9 @@ layout_mode = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="UI/UIContainer/PanelContainer" unique_id=285690685]
 layout_mode = 2
 
+[node name="NameLabel" type="Label" parent="UI/UIContainer/PanelContainer/VBoxContainer" unique_id=852735733]
+layout_mode = 2
+
 [node name="IndexLabel" type="Label" parent="UI/UIContainer/PanelContainer/VBoxContainer" unique_id=1738772422]
 layout_mode = 2
 
@@ -65,3 +68,22 @@ layout_mode = 2
 
 [node name="TempLabel" type="Label" parent="UI/UIContainer/PanelContainer/VBoxContainer" unique_id=310486383]
 layout_mode = 2
+
+[node name="RadiusLabel" type="Label" parent="UI/UIContainer/PanelContainer/VBoxContainer" unique_id=598161362]
+layout_mode = 2
+
+[node name="ConsolePanel" type="PanelContainer" parent="UI" unique_id=1915984758]
+visible = false
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/ConsolePanel" unique_id=1066552938]
+layout_mode = 2
+
+[node name="ConsoleLabel" type="Label" parent="UI/ConsolePanel/HBoxContainer" unique_id=2052428955]
+layout_mode = 2
+text = ">"
+
+[node name="ConsoleInput" type="LineEdit" parent="UI/ConsolePanel/HBoxContainer" unique_id=1944166590]
+layout_mode = 2
+size_flags_horizontal = 3
