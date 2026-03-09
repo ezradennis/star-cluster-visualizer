@@ -95,9 +95,10 @@ func generate_stars(data: Array) -> void:
 		var ra = deg_to_rad(data[i][2])
 		var dec = deg_to_rad(data[i][3])
 		var dist = data[i][4]
+		var lum = data[i][6]
 		
 		var temp = estimate_surface_temp(color_index)
-		var radius = calculate_stellar_radius(app_mag, dist, temp)
+		var radius = calculate_stellar_radius(lum, temp)
 		
 		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
 		log_scale = clamp(log_scale, 0.3, 25.0)
@@ -201,6 +202,7 @@ func parse_hyg_csv(file_path: String) -> Array:
 	var dist_col = 9
 	var mag_col = 13
 	var ci_col = 16
+	var lum_col = 33
 	
 	var i: int = 1
 	while not file.eof_reached():
@@ -228,7 +230,9 @@ func parse_hyg_csv(file_path: String) -> Array:
 		var ra_hours = line[ra_col].to_float()
 		var ra_degrees = ra_hours * 15.0
 		
-		parsed_data.append([mag, color_index, ra_degrees, dec, dist, star_name])
+		var lum = line[lum_col].to_float()
+		
+		parsed_data.append([mag, color_index, ra_degrees, dec, dist, star_name, lum])
 		
 	
 	file.close()
@@ -272,9 +276,10 @@ func find_star(mouse_pos: Vector2) -> void:
 		var dec = star_data[3]
 		var dist = star_data[4]
 		var star_name = star_data[5]
+		var lum = star_data[6]
 		
 		var temp = estimate_surface_temp(color)
-		var radius = calculate_stellar_radius(app_mag, dist, temp)
+		var radius = calculate_stellar_radius(lum, temp)
 		
 		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
 		log_scale = clamp(log_scale, 0.3, 25.0)
@@ -300,17 +305,17 @@ func find_star(mouse_pos: Vector2) -> void:
 		selection_reticle.visible = false
 		ui_container.visible = false
 
-func calculate_stellar_radius(app_mag: float, dist: float, temp: float) -> float:
+func calculate_stellar_radius(lum: float, temp: float) -> float:
 	
-	if temp <= 0.0 or dist <= 0.0:
-		return 1.0
+	# default fallback solar radii, if no temp or lum from data
+	var solar_radii = 1.0
 	
-	var abs_mag = app_mag - 5.0 * (log(dist) / log(10.0)) + 5.0
 	
-	var luminosity_ratio = pow(10.0, 0.4 * (4.83 - abs_mag))
+	if temp <= 0.0 or lum <= 0.0:
+		return solar_radii
 	
-	var temp_ratio = 5778.0 / temp
-	var solar_radii = sqrt(luminosity_ratio) * pow(temp_ratio, 2.0)
+	solar_radii = sqrt(lum) * pow(5756/temp, 2)
+	
 	
 	return solar_radii
 
@@ -341,9 +346,10 @@ func fly_to_star() -> void:
 	var app_mag = data[0]
 	var color = data[1]
 	var dist = data[4]
+	var lum = data[6]
 	
 	var temp = estimate_surface_temp(color)
-	var radius = calculate_stellar_radius(app_mag, dist, temp)
+	var radius = calculate_stellar_radius(lum, temp)
 	
 	var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
 	log_scale = clamp(log_scale, 0.3, 25.0)
@@ -425,9 +431,10 @@ func execute_stars_command() -> void:
 			var app_mag = data[0]
 			var color = data[1]
 			var dist = data[4]
+			var lum = data[6]
 			
 			var temp = estimate_surface_temp(color)
-			var radius =calculate_stellar_radius(app_mag, dist, temp)
+			var radius =calculate_stellar_radius(lum, temp)
 			var display_name = star_name.capitalize() 
 			
 			#var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [display_name, temp, radius]
