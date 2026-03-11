@@ -415,6 +415,9 @@ func execute_tp_command(star_name: String) -> void:
 			return
 	print("Error: Could not find star named '", star_name, "'")
 
+func execute_tp_dist(ra: float, dec: float, dist: float) -> void:
+	pass
+
 func execute_stars_command() -> void:
 	list_panel.visible = true
 	
