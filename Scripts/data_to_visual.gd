@@ -27,6 +27,16 @@ var selection_reticle: MeshInstance3D
 @onready var list_panel: PanelContainer = $UI/ListPanel
 @onready var star_list: RichTextLabel = $UI/ListPanel/StarList
 
+# lookup table
+var ra_index = -1
+var dec_index = -1
+var parallax_index = -1
+var dist_index = -1
+var app_mag_index = -1
+var color_index_index = -1
+var lum_index = -1
+var name_index = -1
+
 
 
 # HR diagram lookup table for v-i
@@ -185,6 +195,51 @@ func spherical_to_cartesian(d: float, ra_rad: float, dec_rad: float) -> Vector3:
 
 # DATA FUNCTIONS
 
+func parse_beehive_csv(file_path: String) -> Array:
+	var parsed_data = []
+	
+	if not FileAccess.file_exists(file_path):
+		push_error("Error: Could not find beehive csv file")
+		return parsed_data
+	
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	
+	file.get_csv_line()
+	var ra_col = 1
+	var dec_col = 2
+	var parallax_col = 3
+	var gmag_col = 4
+	var bp_col = 5
+	var rp_col = 6
+	
+	var i: int = 1
+	while not file.eof_reached():
+		var line = file.get_csv_line()
+		
+		if line.size() <= rp_col:
+			continue
+		
+		var ra = line[ra_col].to_float()
+		var dec = line[dec_col].to_float()
+		var parallax = line[parallax_col].to_float()
+		var app_mag = line[gmag_col].to_float()
+		
+		var bp = line[bp_col].to_float()
+		var rp = line[rp_col].to_float() 
+		var color = bp - rp
+		
+		ra_index = 0
+		dec_index = 1
+		parallax_index = 2
+		app_mag_index = 3
+		color_index_index = 4
+		
+		parsed_data.append([ra, dec, parallax, app_mag, color])
+	
+	file.close()
+	print("Successfully loaded %d stars!" % parsed_data.size())
+	return parsed_data
+
 func parse_hyg_csv(file_path: String) -> Array:
 	var parsed_data = []
 	
@@ -208,7 +263,7 @@ func parse_hyg_csv(file_path: String) -> Array:
 	while not file.eof_reached():
 		var line = file.get_csv_line()
 		
-		if line.size() <= ci_col:
+		if line.size() <= lum_col:
 			continue
 		
 		# for missing color indexes default to 0.65
