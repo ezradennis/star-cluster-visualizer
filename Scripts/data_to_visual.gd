@@ -69,7 +69,8 @@ var main_sequence_data: Array[Vector2] = [
 func _ready() -> void:
 	setup_renderer()
 	
-	star_database = parse_hyg_csv("res://data/hyg_v42.csv")
+	#star_database = parse_hyg_csv("res://data/hyg_v42.csv")
+	star_database = parse_beehive_csv("res://data/Beehive.csv")
 	
 	if star_database.size() > 0:
 		generate_stars(star_database)
@@ -100,12 +101,12 @@ func generate_stars(data: Array) -> void:
 	
 	for i in range(total_stars):
 		
-		var app_mag = data[i][0]
-		var color_index = data[i][1]
-		var ra = deg_to_rad(data[i][2])
-		var dec = deg_to_rad(data[i][3])
-		var dist = data[i][4]
-		var lum = data[i][6]
+		var app_mag = data[i][app_mag_index]
+		var color_index = data[i][color_index_index]
+		var ra = deg_to_rad(data[i][ra_index])
+		var dec = deg_to_rad(data[i][dec_index])
+		var dist = data[i][dist_index]
+		var lum = data[i][lum_index]
 		
 		var temp = estimate_surface_temp(color_index)
 		var radius = calculate_stellar_radius(lum, temp)
@@ -221,7 +222,10 @@ func parse_beehive_csv(file_path: String) -> Array:
 		
 		var ra = line[ra_col].to_float()
 		var dec = line[dec_col].to_float()
+		
 		var parallax = line[parallax_col].to_float()
+		var dist = 1 / (parallax / 1000)
+		
 		var app_mag = line[gmag_col].to_float()
 		
 		var bp = line[bp_col].to_float()
@@ -230,11 +234,13 @@ func parse_beehive_csv(file_path: String) -> Array:
 		
 		ra_index = 0
 		dec_index = 1
-		parallax_index = 2
+		dist_index = 2
 		app_mag_index = 3
 		color_index_index = 4
+		name_index = 5
+		lum_index = 6
 		
-		parsed_data.append([ra, dec, parallax, app_mag, color])
+		parsed_data.append([ra, dec, dist, app_mag, color, "unknown", 1.0])
 	
 	file.close()
 	print("Successfully loaded %d stars!" % parsed_data.size())
@@ -325,13 +331,13 @@ func find_star(mouse_pos: Vector2) -> void:
 		
 		var star_data = star_database[closest_star_index]
 		
-		var app_mag = star_data[0]
-		var color = star_data[1]
-		var ra = star_data[2]
-		var dec = star_data[3]
-		var dist = star_data[4]
-		var star_name = star_data[5]
-		var lum = star_data[6]
+		var app_mag = star_data[app_mag_index]
+		var color = star_data[color_index_index]
+		var ra = star_data[ra_index]
+		var dec = star_data[dec_index]
+		var dist = star_data[dist_index]
+		var star_name = star_data[name_index]
+		var lum = star_data[lum_index]
 		
 		var temp = estimate_surface_temp(color)
 		var radius = calculate_stellar_radius(lum, temp)

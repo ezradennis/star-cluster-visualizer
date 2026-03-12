@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cq0m77c13dteh"
+
+[deps]
+
+files=["res://data/Beehive.RA.translation", "res://data/Beehive.DEC.translation", "res://data/Beehive.Plx.translation", "res://data/Beehive.Gmag.translation", "res://data/Beehive.BPmag.translation", "res://data/Beehive.RPmag.translation"]
+
+source_file="res://data/Beehive.csv"
+dest_files=["res://data/Beehive.RA.translation", "res://data/Beehive.DEC.translation", "res://data/Beehive.Plx.translation", "res://data/Beehive.Gmag.translation", "res://data/Beehive.BPmag.translation", "res://data/Beehive.RPmag.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
