@@ -27,6 +27,16 @@ var selection_reticle: MeshInstance3D
 @onready var list_panel: PanelContainer = $UI/ListPanel
 @onready var star_list: RichTextLabel = $UI/ListPanel/StarList
 
+# lookup table
+var ra_index = -1
+var dec_index = -1
+var parallax_index = -1
+var dist_index = -1
+var app_mag_index = -1
+var color_index_index = -1
+var lum_index = -1
+var name_index = -1
+
 
 
 # HR diagram lookup table for v-i
@@ -59,7 +69,8 @@ var main_sequence_data: Array[Vector2] = [
 func _ready() -> void:
 	setup_renderer()
 	
-	star_database = parse_hyg_csv("res://data/hyg_v42.csv")
+	#star_database = parse_hyg_csv("res://data/hyg_v42.csv")
+	star_database = parse_beehive_csv("res://data/Beehive.csv")
 	
 	if star_database.size() > 0:
 		generate_stars(star_database)
@@ -90,12 +101,12 @@ func generate_stars(data: Array) -> void:
 	
 	for i in range(total_stars):
 		
-		var app_mag = data[i][0]
-		var color_index = data[i][1]
-		var ra = deg_to_rad(data[i][2])
-		var dec = deg_to_rad(data[i][3])
-		var dist = data[i][4]
-		var lum = data[i][6]
+		var app_mag = data[i][app_mag_index]
+		var color_index = data[i][color_index_index]
+		var ra = deg_to_rad(data[i][ra_index])
+		var dec = deg_to_rad(data[i][dec_index])
+		var dist = data[i][dist_index]
+		var lum = data[i][lum_index]
 		
 		var temp = estimate_surface_temp(color_index)
 		var radius = calculate_stellar_radius(lum, temp)
@@ -185,6 +196,56 @@ func spherical_to_cartesian(d: float, ra_rad: float, dec_rad: float) -> Vector3:
 
 # DATA FUNCTIONS
 
+func parse_beehive_csv(file_path: String) -> Array:
+	var parsed_data = []
+	
+	if not FileAccess.file_exists(file_path):
+		push_error("Error: Could not find beehive csv file")
+		return parsed_data
+	
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	
+	file.get_csv_line()
+	var ra_col = 1
+	var dec_col = 2
+	var parallax_col = 3
+	var gmag_col = 4
+	var bp_col = 5
+	var rp_col = 6
+	
+	var i: int = 1
+	while not file.eof_reached():
+		var line = file.get_csv_line()
+		
+		if line.size() <= rp_col:
+			continue
+		
+		var ra = line[ra_col].to_float()
+		var dec = line[dec_col].to_float()
+		
+		var parallax = line[parallax_col].to_float()
+		var dist = 1 / (parallax / 1000)
+		
+		var app_mag = line[gmag_col].to_float()
+		
+		var bp = line[bp_col].to_float()
+		var rp = line[rp_col].to_float() 
+		var color = bp - rp
+		
+		ra_index = 0
+		dec_index = 1
+		dist_index = 2
+		app_mag_index = 3
+		color_index_index = 4
+		name_index = 5
+		lum_index = 6
+		
+		parsed_data.append([ra, dec, dist, app_mag, color, "unknown", 1.0])
+	
+	file.close()
+	print("Successfully loaded %d stars!" % parsed_data.size())
+	return parsed_data
+
 func parse_hyg_csv(file_path: String) -> Array:
 	var parsed_data = []
 	
@@ -208,7 +269,7 @@ func parse_hyg_csv(file_path: String) -> Array:
 	while not file.eof_reached():
 		var line = file.get_csv_line()
 		
-		if line.size() <= ci_col:
+		if line.size() <= lum_col:
 			continue
 		
 		# for missing color indexes default to 0.65
@@ -270,13 +331,13 @@ func find_star(mouse_pos: Vector2) -> void:
 		
 		var star_data = star_database[closest_star_index]
 		
-		var app_mag = star_data[0]
-		var color = star_data[1]
-		var ra = star_data[2]
-		var dec = star_data[3]
-		var dist = star_data[4]
-		var star_name = star_data[5]
-		var lum = star_data[6]
+		var app_mag = star_data[app_mag_index]
+		var color = star_data[color_index_index]
+		var ra = star_data[ra_index]
+		var dec = star_data[dec_index]
+		var dist = star_data[dist_index]
+		var star_name = star_data[name_index]
+		var lum = star_data[lum_index]
 		
 		var temp = estimate_surface_temp(color)
 		var radius = calculate_stellar_radius(lum, temp)
