@@ -47,6 +47,8 @@ func _input(event):
 	if event is InputEventMouseMotion:
 		_mouse_position = event.relative
 	
+	
+	
 	# Receives mouse button input
 	if event is InputEventMouseButton:
 		match event.button_index:
@@ -81,7 +83,6 @@ func _input(event):
 				_shift = event.pressed
 			KEY_ALT:
 				_alt = event.pressed
-
 
 # Updates mouselook and movement every frame
 func _process(delta):
