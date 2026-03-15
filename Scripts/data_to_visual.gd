@@ -69,8 +69,8 @@ var main_sequence_data: Array[Vector2] = [
 func _ready() -> void:
 	setup_renderer()
 	
-	#star_database = parse_hyg_csv("res://data/hyg_v42.csv")
-	star_database = parse_beehive_csv("res://data/Beehive.csv")
+	star_database = parse_hyg_csv("res://data/hyg_v42.csv")
+	#star_database = parse_beehive_csv("res://data/Beehive.csv")
 	
 	if star_database.size() > 0:
 		generate_stars(star_database)
@@ -292,6 +292,14 @@ func parse_hyg_csv(file_path: String) -> Array:
 		var ra_degrees = ra_hours * 15.0
 		
 		var lum = line[lum_col].to_float()
+		
+		app_mag_index = 0
+		color_index_index = 1
+		ra_index = 2
+		dec_index = 3
+		dist_index = 4
+		name_index = 5
+		lum_index = 6
 		
 		parsed_data.append([mag, color_index, ra_degrees, dec, dist, star_name, lum])
 		

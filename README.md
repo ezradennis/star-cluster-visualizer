@@ -2,6 +2,8 @@
 
 Simple star cluster visualizer made in the Godot game engine, written in GDScript
 
+![hygdatabase](./hygdatabase.gif)
+
 Goals:
 
 	 - Import whatever data you want for a star cluster, or just a bunch of stars in a CSV file
