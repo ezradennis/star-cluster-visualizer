@@ -2,7 +2,7 @@
 
 Simple star cluster visualizer made in the Godot game engine, written in GDScript
 
-![hygdatabase](./hygdatabase.gif)
+![hygdatabase](https://github.com/ezradennis/star-cluster-visualizer/blob/main/hygdatabase.GIF)
 
 Goals:
 
