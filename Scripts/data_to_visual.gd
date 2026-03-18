@@ -69,8 +69,8 @@ var main_sequence_data: Array[Vector2] = [
 func _ready() -> void:
 	setup_renderer()
 	
-	star_database = parse_hyg_csv("res://data/hyg_v42.csv")
-	#star_database = parse_beehive_csv("res://data/Beehive.csv")
+	#star_database = parse_hyg_csv("res://data/hyg_v42.csv")
+	star_database = parse_beehive_csv("res://data/Beehive.csv")
 	
 	if star_database.size() > 0:
 		generate_stars(star_database)
@@ -109,10 +109,10 @@ func generate_stars(data: Array) -> void:
 		var lum = data[i][lum_index]
 		
 		var temp = estimate_surface_temp(color_index)
-		var radius = calculate_stellar_radius(lum, temp)
+		var radius = calculate_stellar_radius(app_mag, dist, temp)
 		
-		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
-		log_scale = clamp(log_scale, 0.3, 25.0)
+		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 0.5
+		log_scale = clamp(log_scale, 0.5, 2.0)
 		
 		var position = spherical_to_cartesian(dist, ra, dec) * distance_scale
 		star_positions.append(position)
@@ -122,7 +122,14 @@ func generate_stars(data: Array) -> void:
 		multimesh_instance.multimesh.set_instance_transform(i, transform)
 		
 		# color shader stuff
-		var custom_data = Color(color_index, 0.0, 0.0, 0.0)
+		
+		var min_color = -0.5
+		var max_color = 4.0
+		
+		var normalized_color = inverse_lerp(min_color, max_color, color_index)
+		normalized_color = clamp(normalized_color, 0.0, 1.0)
+		
+		var custom_data = Color(normalized_color, 0.0, 0.0, 0.0)
 		multimesh_instance.multimesh.set_instance_custom_data(i, custom_data)
 
 func setup_reticle() -> void:
@@ -158,9 +165,6 @@ func estimate_surface_temp(color: float) -> float:
 	
 	return 4600 * (term1 + term2)
 
-func estimate_gaia_surface_temp(color: float) -> float:
-	return 0.0
-
 func estimate_abs_mag(color: float) -> float:
 	
 	# if the color index (currently b-v I should make this modular) 
@@ -183,12 +187,6 @@ func estimate_abs_mag(color: float) -> float:
 			return lerpf(point_left.y, point_right.y, weight)
 	
 	return 0.0
-
-
-# returns distance in parsec
-func calculate_distance(apparent_mag: float, absolute_mag: float) -> float:
-	var exponent = (apparent_mag - absolute_mag + 5.0) / 5.0
-	return pow(10.0, exponent)
 
 func spherical_to_cartesian(d: float, ra_rad: float, dec_rad: float) -> Vector3:
 	var x = d * cos(dec_rad) * cos(ra_rad)
@@ -351,10 +349,10 @@ func find_star(mouse_pos: Vector2) -> void:
 		var lum = star_data[lum_index]
 		
 		var temp = estimate_surface_temp(color)
-		var radius = calculate_stellar_radius(lum, temp)
+		var radius = calculate_stellar_radius(app_mag, dist, temp)
 		
-		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
-		log_scale = clamp(log_scale, 0.3, 25.0)
+		var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 0.5
+		log_scale = clamp(log_scale, 0.5, 2.0)
 		
 		selection_reticle.scale = Vector3(log_scale, log_scale, log_scale)
 		selection_reticle.global_position = star_positions[closest_star_index]
@@ -377,17 +375,21 @@ func find_star(mouse_pos: Vector2) -> void:
 		selection_reticle.visible = false
 		ui_container.visible = false
 
-func calculate_stellar_radius(lum: float, temp: float) -> float:
+func calculate_stellar_radius(app_mag: float, dist: float, temp: float) -> float:
 	
-	# default fallback solar radii, if no temp or lum from data
+	# default fallback solar radii, if no temp or dist from data
 	var solar_radii = 1.0
 	
 	
-	if temp <= 0.0 or lum <= 0.0:
+	if temp <= 0.0 or dist <= 0.0:
 		return solar_radii
 	
-	solar_radii = sqrt(lum) * pow(5756/temp, 2)
+	var abs_mag = app_mag - 5.0 * (log(dist) / log(10.0)) + 5.0
 	
+	var lum_ratio = pow(10.0, 0.4 * (4.83 - abs_mag))
+	var temp_ratio = 5778.0 / temp
+	
+	solar_radii =  sqrt(lum_ratio) * pow(temp_ratio, 2.0)
 	
 	return solar_radii
 
@@ -421,10 +423,10 @@ func fly_to_star() -> void:
 	var lum = data[6]
 	
 	var temp = estimate_surface_temp(color)
-	var radius = calculate_stellar_radius(lum, temp)
+	var radius = calculate_stellar_radius(app_mag, dist, temp)
 	
-	var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 3.0
-	log_scale = clamp(log_scale, 0.3, 25.0)
+	var log_scale = 1.0 + (log(max(radius, 0.1)) / log(10.0)) * 0.5
+	log_scale = clamp(log_scale, 0.5, 2.0)
 	
 	stop_distance += log_scale / 5
 	
@@ -509,7 +511,7 @@ func execute_stars_command() -> void:
 			var lum = data[6]
 			
 			var temp = estimate_surface_temp(color)
-			var radius =calculate_stellar_radius(lum, temp)
+			var radius =calculate_stellar_radius(app_mag, dist, temp)
 			var display_name = star_name.capitalize() 
 			
 			#var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [display_name, temp, radius]
