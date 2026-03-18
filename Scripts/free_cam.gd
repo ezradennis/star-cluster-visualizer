@@ -8,7 +8,7 @@ const ALT_MULTIPLIER = 1.0 / SHIFT_MULTIPLIER
 
 
 @export_range(0.0, 1.0) var sensitivity: float = 0.25
-
+@export var keyboard_look_speed: float = 60.0 # deg / sec
 
 # Mouse state
 var _mouse_position = Vector2(0.0, 0.0)
@@ -30,6 +30,10 @@ var _q = false
 var _e = false
 var _shift = false
 var _alt = false
+var _right = false
+var _left = false
+var _up = false
+var _down = false
 
 func _input(event):
 	
@@ -81,11 +85,20 @@ func _input(event):
 				_shift = event.pressed
 			KEY_ALT:
 				_alt = event.pressed
+			KEY_UP:
+				_up = event.pressed
+			KEY_DOWN:
+				_down = event.pressed
+			KEY_LEFT:
+				_left = event.pressed
+			KEY_RIGHT:
+				_right = event.pressed
 
 
 # Updates mouselook and movement every frame
 func _process(delta):
 	_update_mouselook()
+	_update_keyboard_look(delta)
 	_update_movement(delta)
 
 # Updates camera movement
@@ -134,6 +147,28 @@ func _update_mouselook():
 	
 		rotate_y(deg_to_rad(-yaw))
 		rotate_object_local(Vector3(1,0,0), deg_to_rad(-pitch))
+
+func _update_keyboard_look(delta: float) -> void:
+	
+	if !Globals.can_move:
+		return
+		
+	
+	var yaw_input = (_right as float) - (_left as float)
+	
+	var pitch_input = (_down as float) - (_up as float) 
+	
+	if yaw_input == 0.0 and pitch_input == 0.0:
+		return
+	
+	var yaw = yaw_input * keyboard_look_speed * delta
+	var pitch = pitch_input * keyboard_look_speed * delta
+	
+	pitch = clamp(pitch, -90 - _total_pitch, 90 - _total_pitch)
+	_total_pitch += pitch
+	
+	rotate_y(deg_to_rad(-yaw))
+	rotate_object_local(Vector3(1, 0, 0), deg_to_rad(-pitch))
 
 # stop desync when flying to star
 func sync_rotation() -> void:
