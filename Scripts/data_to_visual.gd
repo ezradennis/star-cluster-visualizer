@@ -158,6 +158,9 @@ func estimate_surface_temp(color: float) -> float:
 	
 	return 4600 * (term1 + term2)
 
+func estimate_gaia_surface_temp(color: float) -> float:
+	return 0.0
+
 func estimate_abs_mag(color: float) -> float:
 	
 	# if the color index (currently b-v I should make this modular) 
