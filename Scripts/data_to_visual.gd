@@ -17,7 +17,6 @@ var selection_reticle: MeshInstance3D
 @onready var dec_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/DecLabel
 @onready var temp_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/TempLabel
 @onready var radius_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/RadiusLabel
-@onready var name_label: Label = $UI/UIContainer/PanelContainer/VBoxContainer/NameLabel
 
 # console ui
 @onready var console_panel: PanelContainer = $UI/ConsolePanel
@@ -365,7 +364,6 @@ func find_star(mouse_pos: Vector2) -> void:
 		dec_label.text = "Declination: %.2f" % dec
 		temp_label.text = "Temperature: %d K" % temp
 		radius_label.text = "Solar Radii: %.2f" % radius
-		name_label.text = "Name: %s" % star_name
 		
 		ui_container.visible = true
 		
@@ -476,18 +474,16 @@ func on_command_submitted(command_text: String) -> void:
 		_:
 			print("Unknown comand: ", command_text)
 
-func execute_tp_command(star_name: String) -> void:
+func execute_tp_command(star_index: String) -> void:
 	
 	for i in range(star_database.size()):
 		var data = star_database[i]
 		
-		var current_star_name = str(data[5].to_lower())
-		
-		if current_star_name == star_name:
+		if i == star_index.to_int():
 			Globals.current_selected_star_index = i
 			fly_to_star()
 			return
-	print("Error: Could not find star named '", star_name, "'")
+	print("Error: Could not find star named '", star_index, "'")
 
 func execute_tp_dist(ra: float, dec: float, dist: float) -> void:
 	pass
@@ -498,35 +494,32 @@ func execute_stars_command() -> void:
 	var named_stars_data= []
 	
 	star_list.clear()
-	star_list.append_text("[center][b]--- LIST OF NAMED STARS ---[/b][/center]\n\n")
+	star_list.append_text("[center][b]--- LIST OF STARS ---[/b][/center]\n\n")
 	
 	for i in range(star_database.size()):
 		var data = star_database[i]
-		var star_name = str(data[5]).strip_edges()
+		var star_index = i
 		
-		if star_name != "unknown":
-			var app_mag = data[0]
-			var color = data[1]
-			var dist = data[4]
-			var lum = data[6]
-			
-			var temp = estimate_surface_temp(color)
-			var radius =calculate_stellar_radius(app_mag, dist, temp)
-			var display_name = star_name.capitalize() 
-			
-			#var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [display_name, temp, radius]
-			#star_list.append_text(string)
-			
-			named_stars_data.append({
-				"name": display_name,
-				"temp": temp,
-				"radius": radius
-			})
+		var app_mag = data[app_mag_index]
+		var color = data[color_index_index]
+		var dist = data[dist_index]
+		
+		var temp = estimate_surface_temp(color)
+		var radius = calculate_stellar_radius(app_mag, dist, temp)
+		
+		#var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [display_name, temp, radius]
+		#star_list.append_text(string)
+		
+		named_stars_data.append({
+			"index": star_index,
+			"temp": temp,
+			"radius": radius
+		})
 	
 	named_stars_data.sort_custom(func(a, b): return a["radius"] > b["radius"])
 	
 	for star in named_stars_data:
-		var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [star["name"], star["temp"], star["radius"]]
+		var string = "- [color=white]%s[/color]: [color=lightblue]Temp %d K [/color][color=gray]| [/color][color=green]Radius %.2f R_Sun[/color]\n" % [star["index"], star["temp"], star["radius"]]
 		star_list.append_text(string)
 	
 	
